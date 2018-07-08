@@ -137,7 +137,7 @@ menubar.utils.terminal = terminal -- Set the terminal for applications that requ
 -- }}}
 
 -- Keyboard map indicator and switcher
-mykeyboardlayout = awful.widget.keyboardlayout()
+-- mykeyboardlayout = awful.widget.keyboardlayout()
 
 -- {{{ Wibar
 
@@ -275,9 +275,9 @@ awful.screen.connect_for_each_screen(function(s)
         s.mytasklist, -- Middle widget
         { -- Right widgets
             layout = wibox.layout.fixed.horizontal,
-            beautiful.separator_widget_left,
+            mykeyboardlayout and beautiful.separator_widget_left,
             mykeyboardlayout,
-            beautiful.separator_widget_right_serif,
+            mykeyboardlayout and beautiful.separator_widget_right_serif,
             beautiful.separator_widget_left_serif,
             volume_widget,
             beautiful.separator_widget_right_serif,
@@ -811,6 +811,7 @@ my_modules("awm_distributed_tags")
 --- REMOVED: Mod4+x lua prompt
 --- REMOVED: Some layouts commented
 --- REMOVED: Removed borders
+--- REMOVED: Removed keyboard layout widget
 --- CHANGED: Remap urgent to Mod+ñ
 --- CHANGED: Theme
 --- CHANGED: Master width factor default to 0.65

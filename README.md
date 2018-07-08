@@ -29,6 +29,7 @@ Changelog (not comprehensive):
 * REMOVED: Mod4+x lua prompt
 * REMOVED: Some layouts commented
 * REMOVED: Removed borders
+* REMOVED: Removed keyboard layout widget
 * CHANGED: Remap urgent to Mod+ñ
 * CHANGED: Theme
 * CHANGED: Master width factor default to 0.65
