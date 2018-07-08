@@ -174,6 +174,14 @@ local mem_widget = monitor_graph("free", 5,
 )
 local fs_widget = require("fs_widget")
 local battery_widget = my_modules("awm_battery_widget")
+local battery_widget_left_sep = battery_widget and beautiful.create_separator_widget(false, true)
+local battery_widget_right_sep = battery_widget and beautiful.create_separator_widget(true, true)
+if battery_widget then
+   battery_widget.on_visible_callback = function(widget, visible)
+      battery_widget_left_sep:set_visible(visible)
+      battery_widget_right_sep:set_visible(visible)
+   end
+end
 
 -- Create a wibox for each screen and add it
 local taglist_buttons = gears.table.join(
@@ -290,9 +298,9 @@ awful.screen.connect_for_each_screen(function(s)
             fs_widget and beautiful.separator_widget_left_serif,
             fs_widget,
             fs_widget and beautiful.separator_widget_right_serif,
-            battery_widget and beautiful.separator_widget_left_serif,
+            battery_widget_left_sep,
             battery_widget,
-            battery_widget and beautiful.separator_widget_right_serif,
+            battery_widget_right_sep,
             systray_widget_separators_by_screen_id.left[s],
             wibox.widget.systray(),
             systray_widget_separators_by_screen_id.right[s],
