@@ -1,0 +1,3 @@
+[submodule "awm_kmodules"]
+	path = awm_kmodules
+	url = https://github.com/Kuroneer/awm_kmodules.git
