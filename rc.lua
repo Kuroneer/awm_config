@@ -283,10 +283,10 @@ awful.screen.connect_for_each_screen(function(s)
         s.mytasklist, -- Middle widget
         { -- Right widgets
             layout = wibox.layout.fixed.horizontal,
-            mykeyboardlayout and beautiful.separator_widget_left,
+            beautiful.separator_widget_left,
             mykeyboardlayout,
             mykeyboardlayout and beautiful.separator_widget_right_serif,
-            beautiful.separator_widget_left_serif,
+            mykeyboardlayout and beautiful.separator_widget_left_serif,
             volume_widget,
             beautiful.separator_widget_right_serif,
             cpu_widget and beautiful.separator_widget_left_serif,
