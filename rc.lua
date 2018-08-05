@@ -145,7 +145,7 @@ menubar.utils.terminal = terminal -- Set the terminal for applications that requ
 mytextclock = wibox.widget.textclock(" %b %d - %R ", 45)
 
 -- Audio widget
-local volume_widget = my_modules("awm_simple_amixer_volume")
+local volume_widget = my_modules("awm_simple_pactl_volume")
 
 -- -- Update check widget
 local pacman_update = my_modules("awm_simple_pacman_widget")()
