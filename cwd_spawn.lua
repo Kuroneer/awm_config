@@ -3,8 +3,8 @@
     in the path of the current focused client (from the title)
 
     Author: Jose Maria Perez Ramos <jose.m.perez.ramos+git gmail>
-    Date: 2018.06.05
-    Version: 1.0.0
+    Date: 2018.08.14
+    Version: 1.0.1
     This micro code snippet is public-domain
 ]]
 
@@ -18,7 +18,7 @@ return function(max_count)
         local count, path = 0, client.focus.name:match("^([~/].*)") or client.focus.name:match("[^%w]([~/].*)")
         path = path and path:gsub("^~", home)
         while count < max_count and path and path:len() > 0 do
-            if gfs.is_dir(path) then
+            if gfs.dir_readable(path) then
                 awful.spawn(terminal.." -cd '"..path.."'")
                 return
             end
