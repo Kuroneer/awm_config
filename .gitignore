@@ -1,4 +1,5 @@
 .gitignored/
-lain/
+/lain/
+/term_pa_spectrum/
 background.png
 

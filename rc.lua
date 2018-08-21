@@ -183,6 +183,8 @@ if battery_widget then
    end
 end
 
+local term_pa_spectrum = safe_require("term_pa_spectrum.awm_widget")
+
 -- Create a wibox for each screen and add it
 local taglist_buttons = gears.table.join(
                     awful.button({ }, 1, function(t) t:view_only() end),
@@ -288,6 +290,7 @@ awful.screen.connect_for_each_screen(function(s)
             mykeyboardlayout and beautiful.separator_widget_right_serif,
             mykeyboardlayout and beautiful.separator_widget_left_serif,
             volume_widget,
+            term_pa_spectrum and term_pa_spectrum(s.mywibox),
             beautiful.separator_widget_right_serif,
             cpu_widget and beautiful.separator_widget_left_serif,
             cpu_widget,
@@ -688,8 +691,8 @@ root.keys(awful.util.table.join(root.keys(), awful.util.table.join(
    awful.key({ modkey, "Shift" }, "Return", function() quakeconsoles:toggle() end)
 )))
 
--- Menu + ontop only on floating clients
-my_modules("awm_titleless")(function(c) return quakeconsoles:is_quake_console(c) end)
+-- Menu + ontop only on floating clients, but ignore clients that skip the taskbar
+my_modules("awm_titleless")(function(c) return c.skip_taskbar end)
 
 
 -- Smart Mod4+Right/Left
@@ -851,4 +854,6 @@ my_modules("awm_distributed_tags")
 --- ADDED: CPU and RAM widgets
 --- ADDED: Battery widget
 --- ADDED: Added media keys (Next/Previous/TogglePlay) through playerctl
+--- ADDED: Audio control widget through pactl
+--- ADDED: Audio Spectrum Widget (requires optional dep github.com/Kuroneer/term_pa_spectrum)
 
