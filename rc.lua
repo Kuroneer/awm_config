@@ -417,11 +417,11 @@ globalkeys = gears.table.join(
                       done_callback       = function () gears.timer.start_new(5, function() promptbox.widget:set_markup("") end) end,
                   }
               end,
-              {description = "run prompt", group = "launcher"}),
+              {description = "run prompt", group = "launcher"})
 
     -- Menubar
-    awful.key({ modkey }, "p", function() menubar.show() end,
-              {description = "show the menubar", group = "launcher"})
+    -- awful.key({ modkey }, "p", function() menubar.show() end,
+    --           {description = "show the menubar", group = "launcher"})
 )
 
 clientkeys = gears.table.join(
@@ -736,6 +736,8 @@ local function smart_mod4_arrow(direction)
    end
 end
 
+-- FZF Launcher
+local awm_fzf_launcher = my_modules("awm_fzf_launcher")
 
 -- Keys
 root.keys(awful.util.table.join(root.keys(), awful.util.table.join(
@@ -804,7 +806,12 @@ root.keys(awful.util.table.join(root.keys(), awful.util.table.join(
     end, {description = "next media", group = "media"}),
     awful.key({}, "XF86AudioPrev", function()
        awful.spawn("playerctl previous", false)
-    end, {description = "previous media", group = "media"})
+    end, {description = "previous media", group = "media"}),
+
+    -- FZF Launcher
+    awful.key({ modkey }, "p", function() if not (awm_fzf_launcher and awm_fzf_launcher()) then menubar.show() end end,
+              {description = "show the launcher", group = "launcher"})
+
 )))
 
 -- Tags are distributed among screens
@@ -856,4 +863,5 @@ my_modules("awm_distributed_tags")
 --- ADDED: Added media keys (Next/Previous/TogglePlay) through playerctl
 --- ADDED: Audio control widget through pactl
 --- ADDED: Audio Spectrum Widget (requires optional dep github.com/Kuroneer/term_pa_spectrum)
+--- ADDED: FZF launcher widget with autolaunch in terminal
 
