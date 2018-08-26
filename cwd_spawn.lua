@@ -14,7 +14,7 @@ local home = os.getenv("HOME")
 
 return function(max_count)
     max_count = max_count or 15
-    if client.focus then
+    if client.focus and client.focus.name then
         local count, path = 0, client.focus.name:match("^([~/].*)") or client.focus.name:match("[^%w]([~/].*)")
         path = path and path:gsub("^~", home)
         while count < max_count and path and path:len() > 0 do
