@@ -118,7 +118,8 @@ function syncthing:init(options)
                 local handler = self.event_subscription[event.type]
                 if handler then
                     handler(self, event)
-                    updated_notification = updated_notification or self:update()
+                    local current_updated_notification = self:update()
+                    updated_notification = updated_notification or current_updated_notification
                 end
                 last_id = event.id
             end
