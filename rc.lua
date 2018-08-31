@@ -185,6 +185,10 @@ end
 
 local term_pa_spectrum = safe_require("term_pa_spectrum.awm_widget")
 
+
+local syncthing_widget = safe_require("awm_simple_syncthing_status")
+syncthing_widget = syncthing_widget and syncthing_widget()
+
 -- Create a wibox for each screen and add it
 local taglist_buttons = gears.table.join(
                     awful.button({ }, 1, function(t) t:view_only() end),
@@ -301,6 +305,9 @@ awful.screen.connect_for_each_screen(function(s)
             fs_widget and beautiful.separator_widget_left_serif,
             fs_widget,
             fs_widget and beautiful.separator_widget_right_serif,
+            syncthing_widget and beautiful.separator_widget_left_serif,
+            syncthing_widget,
+            syncthing_widget and beautiful.separator_widget_right_serif,
             battery_widget_left_sep,
             battery_widget,
             battery_widget_right_sep,
@@ -864,4 +871,5 @@ my_modules("awm_distributed_tags")
 --- ADDED: Audio control widget through pactl
 --- ADDED: Audio Spectrum Widget (requires optional dep github.com/Kuroneer/term_pa_spectrum)
 --- ADDED: FZF launcher widget with autolaunch in terminal
+--- ADDED: Syncthing widget
 

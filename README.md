@@ -61,6 +61,10 @@ Changelog (not comprehensive):
 * ADDED: CPU and RAM widgets
 * ADDED: Battery widget
 * ADDED: Added media keys (Next/Previous/TogglePlay) through playerctl
+* ADDED: Audio control widget through pactl
+* ADDED: Audio Spectrum Widget (requires optional dep [term_pa_spectrum](https://github.com/Kuroneer/term_pa_spectrum))
+* ADDED: FZF launcher widget with autolaunch in terminal
+* ADDED: Syncthing widget
 
 ## Authors
 
