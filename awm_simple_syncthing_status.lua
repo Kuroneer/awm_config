@@ -91,6 +91,10 @@ function syncthing:rest(path, callback, csrf_found)
         return
     end
 
+    if not self.csrf then
+        callback(nil)
+    end
+
     local XHeader = "X-"..self.csrf:gsub("=", ": ", 1)
 
     awful.spawn.easy_async('curl '..self.options.endpoint..'/rest/'..path..' -H "'..XHeader..'" -H "Cookie: '..self.csrf..';"',
