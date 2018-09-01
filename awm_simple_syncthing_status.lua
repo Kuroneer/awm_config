@@ -22,12 +22,24 @@ local syncthing = {
     local_folders = {},
     local_folder_keys = {},
     popup_notification = nil,
-    widget = wibox.widget{
-        markup = " ... ",
+    text_widget = wibox.widget{
+        markup = '',
+        align  = 'center',
+        valign = 'center',
+        widget = wibox.widget.textbox,
+    },
+    symbol_widget = wibox.widget{
+        base_markup = ' <span size="larger">♺</span> ',
+        markup = ' <span size="larger">♺</span> ',
         align  = 'center',
         valign = 'center',
         widget = wibox.widget.textbox,
     }
+}
+syncthing.widget = wibox.widget{
+    syncthing.symbol_widget,
+    syncthing.text_widget,
+    layout  = wibox.layout.align.horizontal
 }
 
 syncthing.widget:connect_signal("mouse::enter", function() syncthing:update_popup_notification(true) end)
@@ -230,10 +242,15 @@ function syncthing:update()
         min_completion_percent = math.min(min_completion_percent, local_folder_completion)
     end
 
-    self.widget:set_markup(string.format(" %s♺ %i%s ",
+    self.text_widget:set_markup(string.format("%s%i%s ",
         min_completion_percent < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
         connected_devices,
         min_completion_percent < 100 and string.format(': %.0f%%</span>', min_completion_percent) or '')
+    )
+    self.symbol_widget:set_markup(string.format("%s%s%s",
+        min_completion_percent < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
+        self.symbol_widget.base_markup,
+        min_completion_percent < 100 and '</span>' or '')
     )
 
     self:update_popup_notification()
