@@ -1,5 +1,3 @@
--- TODO - Improve connection check and report
-
 local awful = require("awful")
 local naughty = require("naughty")
 local timer   = require("gears.timer")
@@ -117,10 +115,21 @@ function syncthing:get_events(callback)
     self:rest("events?since="..tostring(self.last_event or 0), callback)
 end
 
+function syncthing:get_config(callback)
+    self:rest("system/config", callback)
+end
+
+function syncthing:get_status(callback)
+    self:rest("system/status", callback)
+end
+
 function syncthing:init(options)
     syncthing.options = setmetatable(options or {}, { __index = syncthing.options })
 
+    local config_callback = nil
     local events_callback = nil
+    local status_callback = nil
+
     events_callback = function(events)
         if events then
             local connected_devices = {}
@@ -161,69 +170,127 @@ function syncthing:init(options)
             self.last_event = last_id
             self:get_events(events_callback)
         else
-            timer.start_new(60, function() self:get_events(events_callback) end)
+            timer.start_new(60, function() self:get_status(status_callback) end)
         end
     end
-    syncthing:get_events(events_callback)
+
+    config_callback = function(config)
+        if config then
+            self:process_config(config)
+            self:get_events(events_callback)
+        else
+            timer.start_new(60, function() self:get_status(status_callback) end)
+        end
+    end
+
+    status_callback = function(status)
+        if status then
+            self.myId = status.myID
+            self:get_config(config_callback)
+        else
+            timer.start_new(60, function() self:get_status(status_callback) end)
+        end
+    end
+    syncthing:get_status(status_callback)
 
     return self.widget
 end
 
-syncthing.event_subscription = {
-    DeviceConnected = function(self, event)
-        local t = self.devices[event.data.id]
+function syncthing:process_config(config)
+    self.local_folder_keys = {}
+    for _, folder in pairs(config.folders) do
+        local f = self.local_folders[folder.id]
+        if not f then
+            f = {completion = 100}
+            self.local_folders[folder.id] = f
+        end
+
+        f.label = folder.label
+        f.path = folder.path
+        table.insert(self.local_folder_keys, folder.id)
+    end
+    table.sort(self.local_folder_keys)
+
+    self.device_keys = {}
+    for _, device in pairs(config.devices) do
+        local t = self.devices[device.deviceID]
         if not t then
             t = {shared_folders = {}}
-            self.devices[event.data.id] = t
+            self.devices[device.deviceID] = t
         end
+        t.name = device.name
+        if device.deviceID ~= self.myId then
+            table.insert(self.device_keys, device.deviceID)
+        end
+    end
+    table.sort(self.device_keys)
+end
 
+syncthing.event_subscription = {
+    ConfigSaved = function(self, event)
+        self:process_config(event.data)
+    end,
+
+    DeviceConnected = function(self, event)
+        local t = self.devices[event.data.id]
         t.name = event.data.deviceName
         t.connected = true
-
-        self.device_keys = {}
-        for k in pairs(self.devices) do
-            table.insert(self.device_keys, k)
-        end
-        table.sort(self.device_keys)
     end,
 
     DeviceDisconnected = function(self, event)
-        local t = self.devices[event.data.id]
-        if not t then
-            t = {shared_folders = {}}
-            self.devices[event.data.id] = t
-        end
-
         self.devices[event.data.id].connected = false
     end,
 
     FolderCompletion = function(self, event)
-        -- Generated when the local or remote contents for a folder changes.
         local t = self.devices[event.data.device]
-        if not t then
-            t = {shared_folders = {}}
-            self.devices[event.data.device] = t
+        t.connected = true
+        local f = t.shared_folders[event.data.folder]
+        if not f then
+            f = {}
+            t.shared_folders[event.data.folder] = f
         end
 
-        t.shared_folders[event.data.folder] = {
-            completion = tonumber(event.data.completion),
-            timestamp = os.time(),
-        }
+        local current_timestamp = os.time()
+        local time_elapsed = current_timestamp - (f.timestamp or current_timestamp)
+        local bytes_transferred = (f.need_bytes or 0) - event.data.needBytes
 
-        t.connected = true
+        f.completion = tonumber(event.data.completion)
+        f.timestamp = current_timestamp;
+        f.need_bytes = event.data.needBytes
+
+        if f.completion >= 100 or f.need_bytes == 0 then
+            f.speed = nil
+            f.estimation = nil
+        elseif bytes_transferred >= 0 and time_elapsed > 0 then
+            f.speed = bytes_transferred / time_elapsed
+            if f.speed > 0 then
+                f.estimation = f.need_bytes / f.speed
+            end
+        end
     end,
 
     FolderSummary = function(self, event)
         -- Generated when folder contents have changed locally.
-        self.local_folders[event.data.folder] = {
-            completion = event.data.summary.globalBytes > 0 and (event.data.summary.inSyncBytes * 100 / event.data.summary.globalBytes) or 100,
-            timestamp = os.time(),
-        }
-        self.local_folder_keys = {}
-        for k in pairs(self.local_folders) do
-            table.insert(self.local_folder_keys, k)
+        local current_timestamp = os.time()
+        local f = self.local_folders[event.data.folder]
+        if not f then return end
+
+        local time_elapsed = current_timestamp - (f.timestamp or current_timestamp)
+        local bytes_transferred = (f.need_bytes or 0) - event.data.summary.needBytes
+
+        f.completion = event.data.summary.globalBytes > 0 and (event.data.summary.inSyncBytes * 100 / event.data.summary.globalBytes) or 100
+        f.timestamp = current_timestamp
+        f.need_bytes = event.data.summary.needBytes
+
+        if f.completion >= 100 or f.need_bytes == 0 then
+            f.speed = nil
+            f.estimation = nil
+        elseif bytes_transferred >= 0 and time_elapsed > 0 then
+            f.speed = bytes_transferred / time_elapsed
+            if f.speed > 0 then
+                f.estimation = f.need_bytes / f.speed
+            end
         end
-        table.sort(self.local_folder_keys)
     end,
 }
 
@@ -234,9 +301,11 @@ function syncthing:update()
     for id, device in pairs(self.devices) do
         if device.connected then
             connected_devices = connected_devices + 1
-            for _, folder in pairs(device.shared_folders) do
-                local shared_folder_completion = folder.completion
-                min_completion_percent = math.min(min_completion_percent, shared_folder_completion)
+            for folder_id, folder in pairs(device.shared_folders) do
+                if self.local_folders[folder_id] then
+                    local shared_folder_completion = folder.completion
+                    min_completion_percent = math.min(min_completion_percent, shared_folder_completion)
+                end
             end
         end
     end
@@ -264,13 +333,47 @@ function syncthing:update()
     return updated_notification
 end
 
+
+local info_units = {"Bytes", "Kb", "Mb", "Gb"}
+local function stringify_info(speed)
+    local unit_index = 1;
+    while speed/1024 >= 1 and unit_index < #info_units do
+        speed = speed/1024
+        unit_index = unit_index +1
+    end
+    return string.format("%.1f %s", speed, info_units[unit_index])
+end
+local function stringify_estimation(estimation)
+    if estimation < 60 then
+        return string.format("%.0fs", estimation)
+    end
+    local seconds = estimation % 60
+    estimation = estimation / 60
+
+    if estimation < 60 then
+        return string.format("%.0f:%02.0f", estimation, seconds)
+    end
+
+    local minutes = estimation % 60
+    estimation = estimation / 60
+
+    return string.format("%.0f:%02.0f:%02.0f", estimation, minutes, seconds)
+end
+
 function syncthing:update_popup_notification(display)
     local text = "<span weight=\"bold\">Local</span>:"
     for _, id in pairs(self.local_folder_keys) do
-        local local_folder_completion = self.local_folders[id].completion
-        text = text..string.format("\n  %s%s: %2.0f%%%s",
+        local folder = self.local_folders[id]
+        local local_folder_completion = folder.completion
+        text = text..string.format("\n  %s%s (%s): %2.0f%%%s%s",
         local_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
-        id, local_folder_completion,
+        folder.label, folder.path, local_folder_completion,
+        folder.speed and folder.estimation and string.format(
+            " - %s (%s @ %s/s)",
+            stringify_estimation(folder.estimation),
+            stringify_info(folder.need_bytes),
+            stringify_info(folder.speed)
+        ) or '',
         local_folder_completion < 100 and '</span>' or '')
     end
     for _, key in ipairs(self.device_keys) do
@@ -278,11 +381,20 @@ function syncthing:update_popup_notification(display)
         text = text.."\n<span weight=\"bold\">"..(device.name or key).."</span>:"
         if device.connected then
             for id, folder in pairs(device.shared_folders) do
-                local shared_folder_completion = folder.completion
-                text = text..string.format("\n  %s%s: %2.0f%%%s",
-                shared_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
-                id, shared_folder_completion,
-                shared_folder_completion < 100 and '</span>' or '')
+                local local_folder_info = self.local_folders[id]
+                if local_folder_info then
+                    local shared_folder_completion = folder.completion
+                    text = text..string.format("\n  %s%s: %2.0f%%%s%s",
+                    shared_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
+                    local_folder_info.label or id, shared_folder_completion,
+                    folder.speed and folder.estimation and string.format(
+                    " - %s (%s @ %s/s)",
+                    stringify_estimation(folder.estimation),
+                    stringify_info(folder.need_bytes),
+                    stringify_info(folder.speed)
+                    ) or '',
+                    shared_folder_completion < 100 and '</span>' or '')
+                end
             end
         else
             text = text.." <span weight=\"bold\">X</span>"
