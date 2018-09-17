@@ -209,9 +209,11 @@ function syncthing:process_config(config)
 
         f.label = folder.label
         f.path = folder.path
-        local start, finish = string.find(f.path, home_path, 1, true)
-        if finish then
-            f.path = "~"..string.sub(f.path, finish+1)
+        if home_path then
+            local start, finish = string.find(f.path, home_path, 1, true)
+            if finish then
+                f.path = "~"..string.sub(f.path, finish+1)
+            end
         end
 
         table.insert(self.local_folder_keys, folder.id)
