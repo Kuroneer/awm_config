@@ -3,6 +3,8 @@ local naughty = require("naughty")
 local timer   = require("gears.timer")
 local wibox = require("wibox")
 
+local home_path = os.getenv("HOME")
+
 if type(awful.spawn("syncthing -v")) ~= "number" then
     return false
 end
@@ -207,6 +209,11 @@ function syncthing:process_config(config)
 
         f.label = folder.label
         f.path = folder.path
+        local start, finish = string.find(f.path, home_path, 1, true)
+        if finish then
+            f.path = "~"..string.sub(f.path, finish+1)
+        end
+
         table.insert(self.local_folder_keys, folder.id)
     end
     table.sort(self.local_folder_keys)
