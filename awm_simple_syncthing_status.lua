@@ -67,32 +67,29 @@ function syncthing:get_csrf(callback)
             local csrf = line:match("Set%-Cookie: ([^\r\n]+)")
             if csrf and not found then
                 found = true
-                self.csrf = csrf
-                if callback then
-                    callback(csrf)
-                end
+                callback(csrf)
             end
         end,
         stderr = function() end,
         output_done = function()
             if not found then
-                self.csrf = nil
-                if callback then
-                    callback(false)
-                end
+                callback(nil)
             end
         end
     })
 end
 
-function syncthing:rest(path, callback, csrf_found)
-    if not self.csrf and csrf_found ~= false then
-        self:get_csrf(function(csrf) self:rest(path, callback, csrf) end)
-        return
-    end
-
+function syncthing:rest(path, callback)
     if not self.csrf then
-        callback(nil)
+        self:get_csrf(function(csrf)
+            if csrf then
+                self.csrf = csrf
+                self:rest(path, callback)
+            else
+                callback(nil)
+            end
+        end)
+        return
     end
 
     local XHeader = "X-"..self.csrf:gsub("=", ": ", 1)
@@ -101,14 +98,13 @@ function syncthing:rest(path, callback, csrf_found)
         function(stdout, stderr, exitreason, exitcode)
             if exitcode and exitcode ~= 0 then
                 self.csrf = nil
+                callback(nil)
             else
                 local t = simplejson.decode(stdout)
                 if not t then
                     self.csrf = nil
                 end
-                if callback then
-                    callback(t)
-                end
+                callback(t)
             end
         end)
 end
@@ -193,7 +189,7 @@ function syncthing:init(options)
             timer.start_new(60, function() self:get_status(status_callback) end)
         end
     end
-    syncthing:get_status(status_callback)
+    self:get_status(status_callback)
 
     return self.widget
 end
