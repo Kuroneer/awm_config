@@ -184,7 +184,10 @@ if battery_widget then
 end
 
 local term_pa_spectrum = safe_require("term_pa_spectrum.awm_widget")
-
+local urxvt_font = terminal == "urxvt" and awesome.xrdb_get_value("", "URxvt.font")
+local term_pa_spectrum_options = {
+   terminal = urxvt_font and "urxvt -fn "..string.gsub(urxvt_font, ":size=%d+", string.format(":size=%2.0f", 10), 1).." -e "
+}
 
 local syncthing_widget = safe_require("awm_simple_syncthing_status")
 syncthing_widget = syncthing_widget and syncthing_widget()
@@ -294,7 +297,7 @@ awful.screen.connect_for_each_screen(function(s)
             mykeyboardlayout and beautiful.separator_widget_right_serif,
             mykeyboardlayout and beautiful.separator_widget_left_serif,
             volume_widget,
-            term_pa_spectrum and term_pa_spectrum(s.mywibox),
+            term_pa_spectrum and term_pa_spectrum(s.mywibox, term_pa_spectrum_options),
             beautiful.separator_widget_right_serif,
             cpu_widget and beautiful.separator_widget_left_serif,
             cpu_widget,
