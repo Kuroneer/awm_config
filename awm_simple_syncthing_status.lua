@@ -370,16 +370,23 @@ function syncthing:update_popup_notification(display)
     for _, id in pairs(self.local_folder_keys) do
         local folder = self.local_folders[id]
         local local_folder_completion = folder.completion
-        text = text..string.format("\n  %s%s (%s): %2.0f%%%s%s",
-        local_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
-        folder.label, folder.path, local_folder_completion,
-        folder.speed and folder.estimation and string.format(
-            " - %s (%s @ %s/s)",
-            stringify_estimation(folder.estimation),
-            stringify_info(folder.need_bytes),
-            stringify_info(folder.speed)
-        ) or '',
-        local_folder_completion < 100 and '</span>' or '')
+        text = text..string.format("\n  %s%s (%s): %2.2f%%%s%s",
+            local_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
+            folder.label,
+            folder.path,
+            local_folder_completion,
+            (folder.speed and folder.estimation and string.format(
+                " - %s (%s @ %s/s)",
+                stringify_estimation(folder.estimation),
+                stringify_info(folder.need_bytes),
+                stringify_info(folder.speed)
+            )) or
+            (folder.need_bytes and folder.need_bytes > 0 and string.format(
+                " - (%s)",
+                stringify_info(folder.need_bytes)
+            )) or '',
+            local_folder_completion < 100 and '</span>' or ''
+        )
     end
     for _, key in ipairs(self.device_keys) do
         local device = self.devices[key]
@@ -389,16 +396,21 @@ function syncthing:update_popup_notification(display)
                 local local_folder_info = self.local_folders[id]
                 if local_folder_info then
                     local shared_folder_completion = folder.completion
-                    text = text..string.format("\n  %s%s: %2.0f%%%s%s",
-                    shared_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
-                    local_folder_info.label or id, shared_folder_completion,
-                    folder.speed and folder.estimation and string.format(
-                    " - %s (%s @ %s/s)",
-                    stringify_estimation(folder.estimation),
-                    stringify_info(folder.need_bytes),
-                    stringify_info(folder.speed)
-                    ) or '',
-                    shared_folder_completion < 100 and '</span>' or '')
+                    text = text..string.format("\n  %s%s: %2.2f%%%s%s",
+                        shared_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
+                        local_folder_info.label or id, shared_folder_completion,
+                        (folder.speed and folder.estimation and string.format(
+                            " - %s (%s @ %s/s)",
+                            stringify_estimation(folder.estimation),
+                            stringify_info(folder.need_bytes),
+                            stringify_info(folder.speed)
+                        )) or
+                        (folder.need_bytes and folder.need_bytes > 0 and string.format(
+                            " - (%s)",
+                            stringify_info(folder.need_bytes)
+                        )) or '',
+                        shared_folder_completion < 100 and '</span>' or ''
+                    )
                 end
             end
         else
