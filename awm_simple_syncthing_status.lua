@@ -147,14 +147,6 @@ function syncthing:init(options)
                 last_id = event.id
             end
 
-            if updated_notification then
-                naughty.notify(setmetatable({
-                    title = "Syncthing",
-                    text = "Updated!",
-                    timeout = 5
-                },{__index = self.options.notification_defaults}))
-            end
-
             for k, v in pairs(self.devices) do
                 if connected_devices[k] ~= v.connected then
                     naughty.notify(setmetatable({
@@ -163,6 +155,14 @@ function syncthing:init(options)
                         timeout = 5
                     },{__index = self.options.notification_defaults}))
                 end
+            end
+
+            if updated_notification then
+                naughty.notify(setmetatable({
+                    title = "Syncthing",
+                    text = "Updated!",
+                    timeout = 5
+                },{__index = self.options.notification_defaults}))
             end
 
             self.last_event = last_id
