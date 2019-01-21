@@ -238,6 +238,7 @@ syncthing.event_subscription = {
 
     DeviceConnected = function(self, event)
         local t = self.devices[event.data.id]
+        t.shared_folders = {}
         t.name = event.data.deviceName
         t.connected = true
     end,
