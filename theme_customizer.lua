@@ -124,32 +124,42 @@ naughty.config.defaults.border_color = theme.fg_minimize -- Dark grey to notice 
 -- Notificatons: Max icon size and timeout with actions
 local surface = require("gears.surface")
 local util = require("awful.util")
-local max_icon_size = dpi(100)
-naughty.config.notify_callback = function(args)
-    if args.actions then
-        args.timeout = 10
-        args.hover_timeout = 30
-    end
+theme.notification_icon_size = dpi(100)
+if awesome.version == "v4.2" then
+    naughty.config.notify_callback = function(args)
+        if args.actions then
+            args.timeout = 10
+            args.hover_timeout = 30
+        end
 
-    local icon = args.icon
-    if icon then
-        -- Copied from naughty/core.lua
-        if type(icon) == "string" and string.sub(icon, 1, 7) == "file://" then
-            icon = string.sub(icon, 8)
-            -- urldecode URI path
-            icon = string.gsub(icon, "%%(%x%x)", function(x) return string.char(tonumber(x, 16)) end )
+        local icon = args.icon
+        if icon then
+            -- Copied from naughty/core.lua
+            if type(icon) == "string" and string.sub(icon, 1, 7) == "file://" then
+                icon = string.sub(icon, 8)
+                -- urldecode URI path
+                icon = string.gsub(icon, "%%(%x%x)", function(x) return string.char(tonumber(x, 16)) end )
+            end
+            if type(icon) == "string" and not gfs.file_readable(icon) then
+                icon = util.geticonpath(icon, naughty.config.icon_formats, naughty.config.icon_dirs, icon_size) or icon
+            end
+            icon = surface.load_uncached(icon)
+            -- Max size applied
+            if icon and math.max(icon:get_width(), icon:get_height()) > theme.notification_icon_size then
+                args.icon_size = theme.notification_icon_size
+            end
+            args.icon = icon
         end
-        if type(icon) == "string" and not gfs.file_readable(icon) then
-            icon = util.geticonpath(icon, naughty.config.icon_formats, naughty.config.icon_dirs, icon_size) or icon
-        end
-        icon = surface.load_uncached(icon)
-        -- Max size applied
-        if icon and math.max(icon:get_width(), icon:get_height()) > max_icon_size then
-            args.icon_size = max_icon_size
-        end
-        args.icon = icon
+        return args
     end
-    return args
+else
+    naughty.config.notify_callback = function(args)
+        if args.actions then
+            args.timeout = 10
+            args.hover_timeout = 30
+        end
+        return args
+    end
 end
 
 -- Change ☛ in notifications actions for >
