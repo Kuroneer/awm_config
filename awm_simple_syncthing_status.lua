@@ -14,16 +14,17 @@ local syncthing = {
         endpoint = "http://localhost:8384",
         transfer_color = "#43c8f4",
     },
-    last_event = 0,
+    last_event = nil,
     last_status = 100,
     event_subscription = {},
+    event_subscription_filter = "",
     devices = {},
     device_keys = {},
     local_folders = {},
     local_folder_keys = {},
     popup_notification = nil,
     text_widget = wibox.widget{
-        markup = '',
+        markup = '? ',
         align  = 'center',
         valign = 'center',
         widget = wibox.widget.textbox,
@@ -110,7 +111,15 @@ function syncthing:rest(path, callback)
 end
 
 function syncthing:get_events(callback)
-    self:rest("events?since="..tostring(self.last_event or 0), callback)
+    self:rest("events?since="..tostring(self.last_event)..(self.event_subscription_filter), callback)
+end
+
+function syncthing:get_last_event_id(callback)
+    self:rest("events?since=0&limit=1"..(self.event_subscription_filter), callback)
+end
+
+function syncthing:get_connections(callback)
+    self:rest("system/connections", callback)
 end
 
 function syncthing:get_config(callback)
@@ -119,6 +128,15 @@ end
 
 function syncthing:get_status(callback)
     self:rest("system/status", callback)
+end
+
+function syncthing:get_completions(callback, folders_to_check)
+    local folder_to_check = table.remove(folders_to_check)
+    local folder_device = folder_to_check[1]
+    local folder_id = folder_to_check[2]
+    self:rest("db/completion?device="..folder_device.."&folder="..folder_id, function(completion)
+        callback(folder_device, folder_id, completion, folders_to_check)
+    end)
 end
 
 function syncthing:init(options)
@@ -172,10 +190,58 @@ function syncthing:init(options)
         end
     end
 
+    completion_callback = function(folder_device, folder_id, completion, folders_to_check)
+        if completion then
+            self.devices[folder_device].shared_folders[folder_id].completion = completion.completion
+
+            if #folders_to_check == 0 then
+                self:update()
+                self:get_events(events_callback)
+            else
+                self:get_completions(completion_callback, folders_to_check)
+            end
+        else
+            timer.start_new(60, function() self:get_status(status_callback) end)
+        end
+    end
+
+    connections_callback = function(connections)
+        if connections then
+            local folders_to_check = {}
+            for deviceID, device in pairs(connections.connections) do
+                self.devices[deviceID].connected = device.connected
+                for id, folder in pairs(self.devices[deviceID].shared_folders) do
+                    table.insert(folders_to_check, {deviceID, id, folder.label})
+                end
+            end
+
+            if #folders_to_check == 0 then
+                self:update()
+                self:get_events(events_callback)
+            else
+                self:get_completions(completion_callback, folders_to_check)
+            end
+        else
+            timer.start_new(60, function() self:get_status(status_callback) end)
+        end
+    end
+
     config_callback = function(config)
         if config then
             self:process_config(config)
-            self:get_events(events_callback)
+            self:get_connections(connections_callback)
+        else
+            timer.start_new(60, function() self:get_status(status_callback) end)
+        end
+    end
+
+    last_event_id_callback = function(events)
+        if events then
+            for _, event in ipairs(events) do
+                self.last_event = event.id
+            end
+
+            self:get_config(config_callback)
         else
             timer.start_new(60, function() self:get_status(status_callback) end)
         end
@@ -184,7 +250,7 @@ function syncthing:init(options)
     status_callback = function(status)
         if status then
             self.myId = status.myID
-            self:get_config(config_callback)
+            self:get_last_event_id(last_event_id_callback)
         else
             timer.start_new(60, function() self:get_status(status_callback) end)
         end
@@ -195,13 +261,31 @@ function syncthing:init(options)
 end
 
 function syncthing:process_config(config)
-    self.local_folder_keys = {}
-    for _, folder in pairs(config.folders) do
-        local f = self.local_folders[folder.id]
-        if not f then
-            f = {completion = 100}
-            self.local_folders[folder.id] = f
+    -- If some config related to a device changes, the device reconnects
+    self.device_keys = {}
+    local old_devices = self.devices
+    local old_devices_shared_folders = {}
+    self.devices = {}
+    for _, device in pairs(config.devices) do
+        local t = old_devices[device.deviceID] or {shared_folders = {}}
+
+        old_devices_shared_folders[device.deviceID] = t.shared_folders
+        t.shared_folders = {}
+
+        self.devices[device.deviceID] = t
+        t.name = device.name
+        if device.deviceID ~= self.myId then
+            table.insert(self.device_keys, device.deviceID)
         end
+    end
+    table.sort(self.device_keys)
+
+    self.local_folder_keys = {}
+    local old_local_folders = self.local_folders
+    self.local_folders = {}
+    for _, folder in pairs(config.folders) do
+        local f = old_local_folders[folder.id] or {completion = 100}
+        self.local_folders[folder.id] = f
 
         f.label = folder.label
         f.path = folder.path
@@ -213,22 +297,14 @@ function syncthing:process_config(config)
         end
 
         table.insert(self.local_folder_keys, folder.id)
+
+        for _, device in pairs(folder.devices) do
+            local shared_folder = old_devices_shared_folders[device.deviceID][folder.id] or {completion = 100}
+            self.devices[device.deviceID].shared_folders[folder.id] = shared_folder
+            shared_folder.label = folder.label
+        end
     end
     table.sort(self.local_folder_keys)
-
-    self.device_keys = {}
-    for _, device in pairs(config.devices) do
-        local t = self.devices[device.deviceID]
-        if not t then
-            t = {shared_folders = {}}
-            self.devices[device.deviceID] = t
-        end
-        t.name = device.name
-        if device.deviceID ~= self.myId then
-            table.insert(self.device_keys, device.deviceID)
-        end
-    end
-    table.sort(self.device_keys)
 end
 
 syncthing.event_subscription = {
@@ -248,12 +324,15 @@ syncthing.event_subscription = {
     end,
 
     FolderCompletion = function(self, event)
+        -- This event is fired after a device is connected too
         local t = self.devices[event.data.device]
+        if not t then return end
+
         t.connected = true
         t.last_event_time = event.time
         local f = t.shared_folders[event.data.folder]
         if not f then
-            f = {}
+            f = {label = self.local_folders[event.data.folder].label}
             t.shared_folders[event.data.folder] = f
         end
 
@@ -300,6 +379,13 @@ syncthing.event_subscription = {
         end
     end,
 }
+do
+    local event_types = {}
+    for event_type in pairs(syncthing.event_subscription) do
+        table.insert(event_types, event_type)
+    end
+    syncthing.event_subscription_filter = "&events="..table.concat(event_types, ',')
+end
 
 function syncthing:update()
     local min_completion_percent = 100
@@ -401,25 +487,22 @@ function syncthing:update_popup_notification(display)
         text = text.."\n<span weight=\"bold\">"..(device.name or key).."</span>"..stringify_event_time(device.last_event_time)..":"
         if device.connected then
             for id, folder in pairs(device.shared_folders) do
-                local local_folder_info = self.local_folders[id]
-                if local_folder_info then
-                    local shared_folder_completion = folder.completion
-                    text = text..string.format("\n  %s%s: %2.2f%%%s%s",
-                        shared_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
-                        local_folder_info.label or id, shared_folder_completion,
-                        (folder.speed and folder.estimation and string.format(
-                            " - %s (%s @ %s/s)",
-                            stringify_estimation(folder.estimation),
-                            stringify_info(folder.need_bytes),
-                            stringify_info(folder.speed)
-                        )) or
-                        (folder.need_bytes and folder.need_bytes > 0 and string.format(
-                            " - (%s)",
-                            stringify_info(folder.need_bytes)
-                        )) or '',
-                        shared_folder_completion < 100 and '</span>' or ''
-                    )
-                end
+                local shared_folder_completion = folder.completion
+                text = text..string.format("\n  %s%s: %2.2f%%%s%s",
+                    shared_folder_completion < 100 and ('<span color="'..self.options.transfer_color..'">') or '',
+                    folder.label or id, shared_folder_completion,
+                    (folder.speed and folder.estimation and string.format(
+                        " - %s (%s @ %s/s)",
+                        stringify_estimation(folder.estimation),
+                        stringify_info(folder.need_bytes),
+                        stringify_info(folder.speed)
+                    )) or
+                    (folder.need_bytes and folder.need_bytes > 0 and string.format(
+                        " - (%s)",
+                        stringify_info(folder.need_bytes)
+                    )) or '',
+                    shared_folder_completion < 100 and '</span>' or ''
+                )
             end
         else
             text = text.." <span weight=\"bold\">X</span>"
