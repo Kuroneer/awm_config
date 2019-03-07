@@ -250,6 +250,7 @@ syncthing.event_subscription = {
     FolderCompletion = function(self, event)
         local t = self.devices[event.data.device]
         t.connected = true
+        t.last_event_time = event.time
         local f = t.shared_folders[event.data.folder]
         if not f then
             f = {}
@@ -365,6 +366,12 @@ local function stringify_estimation(estimation)
 
     return string.format("%.0f:%02.0f:%02.0f", estimation, minutes, seconds)
 end
+local function stringify_event_time(time_estimation_string)
+    if not time_estimation_string then return "" end
+    local Y, m, D, H, M, S, OH, OM = string.match(time_estimation_string, "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)%.%d+%+(%d+):(%d+)")
+
+    return string.format(" (%02d/%02d/%04d %02d:%02d)", D, m, Y, H, M)
+end
 
 function syncthing:update_popup_notification(display)
     local text = "<span weight=\"bold\">Local</span>:"
@@ -391,7 +398,7 @@ function syncthing:update_popup_notification(display)
     end
     for _, key in ipairs(self.device_keys) do
         local device = self.devices[key]
-        text = text.."\n<span weight=\"bold\">"..(device.name or key).."</span>:"
+        text = text.."\n<span weight=\"bold\">"..(device.name or key).."</span>"..stringify_event_time(device.last_event_time)..":"
         if device.connected then
             for id, folder in pairs(device.shared_folders) do
                 local local_folder_info = self.local_folders[id]
