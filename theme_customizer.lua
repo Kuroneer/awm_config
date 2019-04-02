@@ -3,7 +3,10 @@ local theme = require("beautiful").get() or {}
 
 theme.useless_gap   = 0
 
-theme.font          = string.match(awesome.xrdb_get_value("", "URxvt.font"), "xft:([^:]*):.*")
+local xrdb_urxvt_font = awesome.xrdb_get_value("", "URxvt.font")
+if xrdb_urxvt_font  then
+    theme.font      = string.match( xrdb_urxvt_font, "xft:([^:]*):.*")
+end
 
 theme.bg_normal     = "#000000" -- Black
 theme.fg_normal     = "#aaaaaa" -- Clear grey
