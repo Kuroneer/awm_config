@@ -744,6 +744,8 @@ local function smart_mod4_arrow(direction)
             return
          end
       end
+
+      showntags[gmath.cycle(#showntags, sel_tag_index + direction)].selected = true
    end
 end
 
