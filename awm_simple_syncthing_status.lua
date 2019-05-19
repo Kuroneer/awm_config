@@ -102,7 +102,7 @@ function syncthing:rest(path, callback)
                 callback(nil)
             else
                 local t = simplejson.decode(stdout)
-                if not t then
+                if type(t) ~= 'table' then
                     self.csrf = nil
                 end
                 callback(t)
@@ -140,6 +140,7 @@ function syncthing:get_completions(callback, folders_to_check)
 end
 
 function syncthing:init(options)
+
     syncthing.options = setmetatable(options or {}, { __index = syncthing.options })
 
     local config_callback = nil
@@ -164,6 +165,7 @@ function syncthing:init(options)
                 end
                 last_id = event.id
             end
+
 
             for k, v in pairs(self.devices) do
                 if connected_devices[k] ~= v.connected then
