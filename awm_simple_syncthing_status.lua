@@ -139,6 +139,14 @@ function syncthing:get_completions(callback, folders_to_check)
     end)
 end
 
+function syncthing:update_last_seen(devices)
+    self:rest("stats/device", function(t)
+        for id, device in pairs(devices) do
+            device.lastSeen = t[id] and t[id].lastSeen
+        end
+    end)
+end
+
 function syncthing:init(options)
 
     syncthing.options = setmetatable(options or {}, { __index = syncthing.options })
@@ -231,6 +239,7 @@ function syncthing:init(options)
     config_callback = function(config)
         if config then
             self:process_config(config)
+            self:update_last_seen(self.devices)
             self:get_connections(connections_callback)
         else
             timer.start_new(60, function() self:get_status(status_callback) end)
@@ -323,6 +332,7 @@ syncthing.event_subscription = {
 
     DeviceDisconnected = function(self, event)
         self.devices[event.data.id].connected = false
+        self:update_last_seen(self.devices)
     end,
 
     FolderCompletion = function(self, event)
@@ -486,7 +496,7 @@ function syncthing:update_popup_notification(display)
     end
     for _, key in ipairs(self.device_keys) do
         local device = self.devices[key]
-        text = text.."\n<span weight=\"bold\">"..(device.name or key).."</span>"..stringify_event_time(device.last_event_time)..":"
+        text = text.."\n<span weight=\"bold\">"..(device.name or key).."</span>"..stringify_event_time(device.connected and device.last_event_time or device.lastSeen)..":"
         if device.connected then
             for id, folder in pairs(device.shared_folders) do
                 local shared_folder_completion = folder.completion
