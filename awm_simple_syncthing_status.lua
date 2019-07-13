@@ -175,15 +175,15 @@ function syncthing:init(options)
             end
 
 
-            for k, v in pairs(self.devices) do
-                if connected_devices[k] ~= v.connected then
-                    naughty.notify(setmetatable({
-                        title = "Syncthing",
-                        text = (v.name or k) .. (v.connected and " connected!" or " disconnected!"),
-                        timeout = 5
-                    },{__index = self.options.notification_defaults}))
-                end
-            end
+            -- for k, v in pairs(self.devices) do
+            --     if connected_devices[k] ~= v.connected then
+            --         naughty.notify(setmetatable({
+            --             title = "Syncthing",
+            --             text = (v.name or k) .. (v.connected and " connected!" or " disconnected!"),
+            --             timeout = 5
+            --         },{__index = self.options.notification_defaults}))
+            --     end
+            -- end
 
             if updated_notification then
                 naughty.notify(setmetatable({
