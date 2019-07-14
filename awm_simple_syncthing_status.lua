@@ -462,7 +462,7 @@ local function stringify_estimation(estimation)
     local minutes = estimation % 60
     estimation = estimation / 60
 
-    return string.format("%.0f:%02.0f:%02.0f", estimation, minutes, seconds)
+    return string.format("%.0f:%02.0f:%02.0f", math.floor(estimation), minutes, seconds)
 end
 local function stringify_event_time(time_estimation_string)
     if not time_estimation_string then return "" end
