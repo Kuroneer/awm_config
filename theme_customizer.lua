@@ -4,8 +4,14 @@ local theme = require("beautiful").get() or {}
 theme.useless_gap   = 0
 
 local xrdb_urxvt_font = awesome.xrdb_get_value("", "URxvt.font")
-if xrdb_urxvt_font  then
-    theme.font      = string.match( xrdb_urxvt_font, "xft:([^:]*):.*")
+xrdb_urxvt_font = xrdb_urxvt_font and string.match( xrdb_urxvt_font, "xft:([^:]*):.*")
+if xrdb_urxvt_font then
+    local xrdb_urxvt_font_without_prefix = string.match(xrdb_urxvt_font, "xos4 (.*)")
+    theme.font      = xrdb_urxvt_font_without_prefix or xrdb_urxvt_font
+end
+local xrdb_awesomewm_font = awesome.xrdb_get_value("", "awesomewm.font")
+if xrdb_awesomewm_font then
+    theme.font      = xrdb_awesomewm_font
 end
 
 theme.bg_normal     = "#000000" -- Black
