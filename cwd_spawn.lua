@@ -18,7 +18,8 @@ return function(max_count)
         local count, path = 0, client.focus.name:match("^([~/].*)") or client.focus.name:match("[^%w]([~/].*)")
         path = path and path:gsub("^~", home)
         while count < max_count and path and path:len() > 0 do
-            if gfs.dir_readable(path) then
+            local successful, dir_readable = pcall(function() return gfs.dir_readable(path) end)
+            if successful and dir_readable then
                 awful.spawn(terminal.." -cd '"..path.."'")
                 return
             end
