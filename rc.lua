@@ -809,23 +809,14 @@ root.keys(awful.util.table.join(root.keys(), awful.util.table.join(
        end
     end, {description = "make all clients focusable again", group = "client"}),
 
-    -- Media Keys (Play/Next/Previous)
-    -- https://wiki.archlinux.org/index.php/awesome
-    awful.key({}, "XF86AudioPlay", function()
-       awful.spawn("playerctl play-pause", false)
-    end, {description = "play-pause media", group = "media"}),
-    awful.key({}, "XF86AudioNext", function()
-       awful.spawn("playerctl next", false)
-    end, {description = "next media", group = "media"}),
-    awful.key({}, "XF86AudioPrev", function()
-       awful.spawn("playerctl previous", false)
-    end, {description = "previous media", group = "media"}),
-
     -- FZF Launcher
     awful.key({ modkey }, "p", function() if not (awm_fzf_launcher and awm_fzf_launcher()) then menubar.show() end end,
               {description = "show the launcher", group = "launcher"})
 
 )))
+
+-- Media Keys (Play/Next/Previous)
+my_modules("awm_playerctl")
 
 -- Tags are distributed among screens
 my_modules("awm_distributed_tags")
