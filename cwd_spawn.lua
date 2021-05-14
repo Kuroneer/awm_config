@@ -20,7 +20,7 @@ return function(max_count)
         while count < max_count and path and path:len() > 0 do
             local successful, dir_readable = pcall(function() return gfs.dir_readable(path) end)
             if successful and dir_readable then
-                awful.spawn(terminal.." -cd '"..path.."'")
+                awful.spawn.with_shell("cd '"..path.."';"..terminal)
                 return
             end
             path = path:match("(.*)[^%w][%w]*")
