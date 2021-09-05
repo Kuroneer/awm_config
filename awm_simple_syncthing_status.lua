@@ -154,6 +154,9 @@ function syncthing:init(options)
     local config_callback = nil
     local events_callback = nil
     local status_callback = nil
+    local connections_callback = nil
+    local completion_callback = nil
+    local last_event_id_callback = nil
 
     events_callback = function(events)
         if events then
@@ -173,7 +176,6 @@ function syncthing:init(options)
                 end
                 last_id = event.id
             end
-
 
             -- for k, v in pairs(self.devices) do
             --     if connected_devices[k] ~= v.connected then
@@ -466,7 +468,7 @@ local function stringify_estimation(estimation)
 end
 local function stringify_event_time(time_estimation_string)
     if not time_estimation_string then return "" end
-    local Y, m, D, H, M, S, OH, OM = string.match(time_estimation_string, "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)%.%d+%+(%d+):(%d+)")
+    local Y, m, D, H, M, S, OH, OM = string.match(time_estimation_string, "(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)%.?%d*%+(%d+):(%d+)")
 
     return string.format(" (%02d/%02d/%04d %02d:%02d)", D, m, Y, H, M)
 end

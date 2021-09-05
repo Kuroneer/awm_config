@@ -149,10 +149,6 @@ local volume_widget = my_modules("awm_simple_pactl_volume")
 
 -- -- Update check widget
 local pacman_update = my_modules("awm_simple_pacman_widget")()
-local apt_update = my_modules("awm_simple_pacman_widget"){
-   check = "bash -c 'apt list --upgradable 2>/dev/null | tail -n +2'",
-   update = terminal .. " -e sudo apt upgrade"
-}
 
 -- -- Resources widgets
 local monitor_graph = require("monitor_graph")
@@ -283,7 +279,6 @@ awful.screen.connect_for_each_screen(function(s)
             beautiful.separator_widget_left,
             mylauncher,
             pacman_update,
-            apt_update,
             beautiful.separator_widget_right_serif,
             beautiful.separator_widget_left_serif,
             s.mytaglist,
@@ -781,7 +776,8 @@ root.keys(awful.util.table.join(root.keys(), awful.util.table.join(
     -- Also on Mod+U/I
     awful.key({ modkey,           }, "u", smart_mod4_arrow(-1),       {description = "view previous or non empty", group = "tag"}),
     awful.key({ modkey,           }, "i", smart_mod4_arrow(1),        {description = "view next or non empty",     group = "tag"}),
-    -- Remap urgent to mod+Y
+    -- Remap urgent to mod+; (and same position for ES keyboard)
+    awful.key({ modkey,           }, ";", awful.client.urgent.jumpto, {description = "jump to urgent client",      group = "client"}),
     awful.key({ modkey,           }, "ñ", awful.client.urgent.jumpto, {description = "jump to urgent client",      group = "client"}),
 
     -- Mod Up, Down, y change focus screen
