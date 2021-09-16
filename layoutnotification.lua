@@ -18,6 +18,7 @@ local notifyLayoutIcon = function(t)
         timeout = 1,
         screen = screen,
         ontop = true,
+        ignore_suspend = true,
         replaces_id = layoutNotificationInScreen[screen.index],
     }.id
     layoutNotifiedInScreen[screen.index] = layout
@@ -45,6 +46,7 @@ local notifyNcolNmaster = function(t)
             text = text,
             timeout = 3,
             screen = screen,
+            ignore_suspend = true,
             replaces_id = ncolmasterNotificationInScreen[screen.index],
         }.id
     end

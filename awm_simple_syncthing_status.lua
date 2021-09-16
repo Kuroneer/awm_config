@@ -13,6 +13,9 @@ local syncthing = {
     options = {
         endpoint = "http://localhost:8384",
         transfer_color = "#43c8f4",
+        notification_defaults = {
+            ignore_suspend = true,
+        },
     },
     last_event = nil,
     last_status = 100,
