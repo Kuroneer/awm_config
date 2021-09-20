@@ -868,4 +868,5 @@ my_modules("awm_distributed_tags")
 --- ADDED: Audio Spectrum Widget (requires optional dep github.com/Kuroneer/term_pa_spectrum)
 --- ADDED: FZF launcher widget with autolaunch in terminal
 --- ADDED: Syncthing widget
+--- ADDED: Plugin to listen to loginctl lock-sessions dbus event
 
