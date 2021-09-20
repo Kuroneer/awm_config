@@ -747,6 +747,9 @@ end
 -- FZF Launcher
 local awm_fzf_launcher = my_modules("awm_fzf_launcher")
 
+-- Lock on loginctl lock-session
+my_modules("awm_locker")("slock")
+
 -- Keys
 root.keys(awful.util.table.join(root.keys(), awful.util.table.join(
     -- Ranger & thunar (file explorers)

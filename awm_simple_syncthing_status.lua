@@ -5,7 +5,7 @@ local wibox = require("wibox")
 
 local home_path = os.getenv("HOME")
 
-if type(awful.spawn("syncthing -v")) ~= "number" then
+if type(awful.spawn("syncthing -h")) ~= "number" then
     return false
 end
 
