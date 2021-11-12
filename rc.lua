@@ -112,7 +112,7 @@ mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesom
                                     safe_require("debian.menu") and { "Debian", debian.menu.Debian_menu.Debian },
                                     { "OPEN: terminal", terminal },
                                     { "OPEN: file", "thunar" },
-                                    { "OPEN: Chromium", "chromium" },
+                                    { "OPEN: Browser", "sensible-browser" },
                                     { "OPEN: VLC", "vlc" },
                                     { "OPEN: Steam", "steam" },
                                     { "TAG: toggle float", function()
