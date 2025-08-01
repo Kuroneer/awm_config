@@ -1,3 +1,7 @@
+# Notice
+
+Archiving repository due to moving to wayland
+
 # AWM Config
 
 **AWM Config** is my own configuration repository for [AwesomeWM 4](https://awesomewm.org/).
